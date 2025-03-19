@@ -1,10 +1,11 @@
 {
   "name": "algoring-ts",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Typescript NPM package for producing Ring Signatures suitable for the AVM.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "build": "tsc",
     "test": "jest"
   },
   "repository": {
