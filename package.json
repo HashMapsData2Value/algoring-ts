@@ -1,0 +1,31 @@
+{
+  "name": "algoring-ts",
+  "version": "1.0.0",
+  "description": "Typescript NPM package for producing Ring Signatures suitable for the AVM.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HashMapsData2Value/algoring-ts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HashMapsData2Value/algoring-ts/issues"
+  },
+  "homepage": "https://github.com/HashMapsData2Value/algoring-ts#readme",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.10",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.6",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.8.1"
+  }
+}
