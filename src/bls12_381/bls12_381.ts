@@ -1,6 +1,9 @@
 import { bls12_381 } from '@noble/curves/bls12-381';
 import { keccak_256 } from '@noble/hashes/sha3';
 import * as utils from '@noble/curves/abstract/utils';
+import { error } from 'console';
+
+const CURVE_ORDER = 52435875175126190479447740508185965837690552500527637822603658699938581184513n
 
 
 // The AVM represents points as their X and Y points concatenated
@@ -22,7 +25,8 @@ export function hash_to_fe(...args: Uint8Array[]): Uint8Array {
   for (let arg of args) {
     hasher.update(arg);
   }
-  return utils.numberToBytesBE(bls12_381.G1.normPrivateKeyToScalar(hasher.digest()), 32);
+  //TODO: Understand if this is introducing dangerous modulo bias
+  return utils.numberToBytesBE(utils.hexToNumber(utils.bytesToHex(hasher.digest())) % CURVE_ORDER, 32);
 }
 
 export function generate_fe(): Uint8Array {
@@ -156,7 +160,14 @@ export function createRing(n: number, signerIdx: number, signerPk: Uint8Array): 
   return ring;
 }
 
-export function generate_ring_signature(msg: Uint8Array, sk: Uint8Array, ring: Uint8Array[], keyImage: Uint8Array): { signature: Uint8Array[], key_image: Uint8Array } {
+export function generate_ring_signature(
+  msg: Uint8Array,
+  sk: Uint8Array,
+  ring: Uint8Array[],
+  keyImage: Uint8Array): {
+    signature: Uint8Array[],
+    keyImage: Uint8Array,
+  } {
   const pi = ring.findIndex(pk => areEqual(pk, generate_ge(sk)));
   const n = ring.length;
 
@@ -186,7 +197,11 @@ export function generate_ring_signature(msg: Uint8Array, sk: Uint8Array, ring: U
     signature.push(nonces[i]);
   }
 
-  return { signature, key_image: keyImage };
+  if (!verify_ring_signature(msg, signature, ring, keyImage)) {
+    throw new Error('error: generated ring signature not valid');
+  }
+
+  return { signature, keyImage };
 }
 
 export function verify_ring_signature(msg: Uint8Array, signature: Uint8Array[], ring: Uint8Array[], keyImage: Uint8Array): boolean {
@@ -199,4 +214,34 @@ export function verify_ring_signature(msg: Uint8Array, signature: Uint8Array[], 
   values_prime[0] = create_ring_link(msg, signature[n], values_prime[n - 1], ring[n - 1], keyImage);
 
   return areEqual(values_prime[0], signature[0]);
+}
+
+// Prepare Ring Signature for AVM App+LSig Combo Consumption
+export function construct_avm_ring_signature(msg: Uint8Array, signature: Uint8Array[], ring: Uint8Array[], keyImage: Uint8Array): {
+  msg: Uint8Array,
+  signatureConcat: Uint8Array,
+  intermediateValues: Uint8Array
+} {
+  const n = ring.length;
+  let intermediateValues: Uint8Array[] = [];
+  intermediateValues.push(signature[0]);
+
+  const signatureConcat = new Uint8Array(signature.length * 32);
+  for (let i = 0; i < signature.length; i++) {
+    signatureConcat.set(signature[i], i * 32);
+  }
+
+  for (let i = 0; i < n - 1; i++) {
+    intermediateValues.push(create_ring_link(msg, signatureConcat.slice((i + 1) * 32, (i + 2) * 32), intermediateValues[i], ring[i], keyImage));
+  }
+
+  intermediateValues.push(create_ring_link(msg, signature[n], intermediateValues[n - 1], ring[n - 1], keyImage));
+
+  if (!areEqual(intermediateValues[0], signature[0])) {
+    throw new Error('error: ring signature not valid');
+  }
+
+  const intermediateValuesConcat = new Uint8Array(intermediateValues.flatMap(value => Array.from(value)));
+
+  return { msg, signatureConcat, intermediateValues: intermediateValuesConcat };
 }

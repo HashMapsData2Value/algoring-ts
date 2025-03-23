@@ -9,6 +9,8 @@ import {
   hash_point_to_ge,
   NIZK_DLOG_generate_proof,
   NIZK_DLOG_verify_proof,
+  to_pxpy,
+  construct_avm_ring_signature,
 } from './bls12_381';
 import { TextEncoder } from 'util';
 
@@ -23,7 +25,7 @@ describe('Ring Signature', () => {
   beforeAll(() => {
     sk = generate_fe();
     pk = generate_ge(sk);
-    number_of_participants = 10;
+    number_of_participants = 6;
 
     const pi = getRandomShiftFactor(number_of_participants);
     ring = createRing(number_of_participants, pi, pk);
@@ -38,6 +40,13 @@ describe('Ring Signature', () => {
     const { signature } = generate_ring_signature(msg, sk, ring, keyImage);
 
     expect(verify_ring_signature(msg, signature, ring, keyImage)).toBe(true);
+  });
+
+  it('should generate an avm-compatible ring signature', () => {
+    const { signature } = generate_ring_signature(msg, sk, ring, keyImage);
+
+    construct_avm_ring_signature(msg, signature, ring, keyImage);
+
   });
 
   it('should fail to verify a ring signature with a different message', () => {
