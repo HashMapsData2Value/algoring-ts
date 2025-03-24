@@ -178,6 +178,9 @@ function createRing(n, signerIdx, signerPk) {
 }
 function generate_ring_signature(msg, sk, ring, keyImage) {
     const pi = ring.findIndex(pk => areEqual(pk, generate_ge(sk)));
+    if (pi === -1) {
+        throw new Error('error: signer not found in ring');
+    }
     const n = ring.length;
     let nonces = [];
     for (let i = 0; i < n; i++) {
