@@ -169,6 +169,9 @@ export function generate_ring_signature(
     keyImage: Uint8Array,
   } {
   const pi = ring.findIndex(pk => areEqual(pk, generate_ge(sk)));
+  if (pi === -1) {
+    throw new Error('error: signer not found in ring');
+  }
   const n = ring.length;
 
   let nonces: Uint8Array[] = [];
