@@ -12,6 +12,12 @@ export function to_pxpy(input: Uint8Array): Uint8Array {
   return utils.concatBytes(utils.numberToBytesBE(p.x, 48), utils.numberToBytesBE(p.y, 48))
 }
 
+export function from_pxpy(input: Uint8Array): Uint8Array {
+  const x = utils.bytesToNumberBE(input.slice(0, 48))
+  const y = utils.bytesToNumberBE(input.slice(48, 96))
+  return bls12_381.G1.ProjectivePoint.fromAffine({ x, y }).toRawBytes()
+}
+
 export function hash_point_to_ge(input: Uint8Array): Uint8Array {
   const pxpy = to_pxpy(input)
   const hash = keccak_256.create().update(pxpy).digest();

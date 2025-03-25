@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.to_pxpy = to_pxpy;
+exports.from_pxpy = from_pxpy;
 exports.hash_point_to_ge = hash_point_to_ge;
 exports.hash_to_fe = hash_to_fe;
 exports.generate_fe = generate_fe;
@@ -59,6 +60,11 @@ const CURVE_ORDER = 524358751751261904794477405081859658376905525005276378226036
 function to_pxpy(input) {
     const p = bls12_381_1.bls12_381.G1.ProjectivePoint.fromHex(utils.bytesToHex(input));
     return utils.concatBytes(utils.numberToBytesBE(p.x, 48), utils.numberToBytesBE(p.y, 48));
+}
+function from_pxpy(input) {
+    const x = utils.bytesToNumberBE(input.slice(0, 48));
+    const y = utils.bytesToNumberBE(input.slice(48, 96));
+    return bls12_381_1.bls12_381.G1.ProjectivePoint.fromAffine({ x, y }).toRawBytes();
 }
 function hash_point_to_ge(input) {
     const pxpy = to_pxpy(input);

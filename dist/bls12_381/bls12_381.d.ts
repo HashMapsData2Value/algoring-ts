@@ -1,4 +1,5 @@
 export declare function to_pxpy(input: Uint8Array): Uint8Array;
+export declare function from_pxpy(input: Uint8Array): Uint8Array;
 export declare function hash_point_to_ge(input: Uint8Array): Uint8Array;
 export declare function hash_to_fe(...args: Uint8Array[]): Uint8Array;
 export declare function generate_fe(): Uint8Array;
