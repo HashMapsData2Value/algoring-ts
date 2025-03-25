@@ -237,7 +237,7 @@ function construct_avm_ring_signature(msg, signature, ring, keyImage) {
     for (let i = 0; i < n - 1; i++) {
         intermediateValues.push(create_ring_link(msg, signatureConcat.slice((i + 1) * 32, (i + 2) * 32), intermediateValues[i], ring[i], keyImage));
     }
-    intermediateValues.push(create_ring_link(msg, signature[n], intermediateValues[n - 1], ring[n - 1], keyImage));
+    intermediateValues[0] = create_ring_link(msg, signature[n], intermediateValues[n - 1], ring[n - 1], keyImage);
     if (!areEqual(intermediateValues[0], signature[0])) {
         throw new Error('error: ring signature not valid');
     }
