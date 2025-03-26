@@ -160,9 +160,9 @@ function genKeyImage(sk, pk) {
 }
 function create_ring_link(msg, r, c, pk, key_image) {
     if ((c === 0) || (key_image === 0)) {
-        return hash_to_fe(msg, ec_scalar_mul(1, r), genKeyImage(r, pk));
+        return hash_to_fe(msg, to_pxpy(ec_scalar_mul(1, r)), to_pxpy(genKeyImage(r, pk)));
     }
-    return hash_to_fe(msg, ec_add(ec_scalar_mul(1, r), ec_scalar_mul(pk, c)), ec_add(genKeyImage(r, pk), ec_scalar_mul(key_image, c)));
+    return hash_to_fe(msg, to_pxpy(ec_add(ec_scalar_mul(1, r), ec_scalar_mul(pk, c))), to_pxpy(ec_add(genKeyImage(r, pk), ec_scalar_mul(key_image, c))));
 }
 function areEqual(a, b) {
     return a.length === b.length && a.every((val, index) => val === b[index]);

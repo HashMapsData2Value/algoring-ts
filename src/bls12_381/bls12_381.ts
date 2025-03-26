@@ -5,7 +5,6 @@ import { error } from 'console';
 
 const CURVE_ORDER = 52435875175126190479447740508185965837690552500527637822603658699938581184513n
 
-
 // The AVM represents points as their X and Y points concatenated
 export function to_pxpy(input: Uint8Array): Uint8Array {
   const p = bls12_381.G1.ProjectivePoint.fromHex(utils.bytesToHex(input))
@@ -141,9 +140,9 @@ export function genKeyImage(sk: Uint8Array, pk: Uint8Array): Uint8Array {
 
 export function create_ring_link(msg: Uint8Array, r: Uint8Array, c: Uint8Array | 0, pk: Uint8Array, key_image: Uint8Array | 0): Uint8Array {
   if ((c === 0) || (key_image === 0)) {
-    return hash_to_fe(msg, ec_scalar_mul(1, r), genKeyImage(r, pk));
+    return hash_to_fe(msg, to_pxpy(ec_scalar_mul(1, r)), to_pxpy(genKeyImage(r, pk)));
   }
-  return hash_to_fe(msg, ec_add(ec_scalar_mul(1, r), ec_scalar_mul(pk, c)), ec_add(genKeyImage(r, pk), ec_scalar_mul(key_image, c)));
+  return hash_to_fe(msg, to_pxpy(ec_add(ec_scalar_mul(1, r), ec_scalar_mul(pk, c))), to_pxpy(ec_add(genKeyImage(r, pk), ec_scalar_mul(key_image, c))));
 }
 
 function areEqual(a: Uint8Array, b: Uint8Array): boolean {
