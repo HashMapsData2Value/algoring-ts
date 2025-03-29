@@ -20,7 +20,7 @@ export function from_pxpy(input: Uint8Array): Uint8Array {
 export function hash_point_to_ge(input: Uint8Array): Uint8Array {
   const pxpy = to_pxpy(input)
   const hash = keccak_256.create().update(pxpy).digest();
-  const number = utils.hexToNumber(utils.bytesToHex(hash))
+  const number = utils.hexToNumber(utils.bytesToHex(hash)) % bls12_381.G1.CURVE.Fp.ORDER;
   //TODO: Need to look into implementing ExpandMsgXmd in AVM; and then call HashToCurve directly from Nobles
   return bls12_381.G1.ProjectivePoint.fromAffine(bls12_381.G1.mapToCurve([number]).toAffine()).toRawBytes();
 }
