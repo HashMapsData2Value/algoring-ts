@@ -12,7 +12,7 @@ import {
   NIZK_DLOG_verify_proof,
   to_pxpy,
   construct_avm_ring_signature,
-} from './bls12_381';
+} from './ring';
 import { TextEncoder } from 'util';
 import * as utils from '@noble/curves/abstract/utils';
 
