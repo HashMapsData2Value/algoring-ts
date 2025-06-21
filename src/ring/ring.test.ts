@@ -1,4 +1,3 @@
-import { bls12_381 } from '@noble/curves/bls12-381';
 import {
   generate_fe,
   generate_ge,
@@ -14,7 +13,6 @@ import {
   construct_avm_ring_signature,
 } from './ring';
 import { TextEncoder } from 'util';
-import * as utils from '@noble/curves/abstract/utils';
 
 describe('Ring Signature', () => {
   let sk: Uint8Array;

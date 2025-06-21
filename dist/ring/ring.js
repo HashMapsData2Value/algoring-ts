@@ -53,9 +53,11 @@ exports.generate_ring_signature = generate_ring_signature;
 exports.verify_ring_signature = verify_ring_signature;
 exports.construct_avm_ring_signature = construct_avm_ring_signature;
 const bls12_381_1 = require("@noble/curves/bls12-381");
-const sha3_1 = require("@noble/hashes/sha3");
+const sha256_1 = require("@noble/hashes/sha256");
+const hash_to_curve_1 = require("@noble/curves/abstract/hash-to-curve");
 const utils = __importStar(require("@noble/curves/abstract/utils"));
 const CURVE_ORDER = 52435875175126190479447740508185965837690552500527637822603658699938581184513n;
+// The BLS12-381 curve order is approximately 2^254.857089413, which is less than 2^256
 // The AVM represents points as their X and Y points concatenated
 function to_pxpy(input) {
     const p = bls12_381_1.bls12_381.G1.ProjectivePoint.fromHex(utils.bytesToHex(input));
@@ -66,15 +68,15 @@ function from_pxpy(input) {
     const y = utils.bytesToNumberBE(input.slice(48, 96));
     return bls12_381_1.bls12_381.G1.ProjectivePoint.fromAffine({ x, y }).toRawBytes();
 }
-//TODO: Need to look into implementing ExpandMsgXmd in AVM; and then call HashToCurve directly from Nobles
 function hash_point_to_ge(input) {
     const pxpy = to_pxpy(input);
-    const hash = sha3_1.keccak_256.create().update(pxpy).digest();
-    const number = utils.hexToNumber(utils.bytesToHex(hash)) % bls12_381_1.bls12_381.G1.CURVE.Fp.ORDER;
+    const DST = utils.utf8ToBytes('BLS12381G1_XMD:SHA-256_SSWU_RO_');
+    const uniformBytes = (0, hash_to_curve_1.expand_message_xmd)(pxpy, DST, 48, sha256_1.sha256);
+    const number = utils.hexToNumber(utils.bytesToHex(uniformBytes)) % bls12_381_1.bls12_381.G1.CURVE.Fp.ORDER;
     return bls12_381_1.bls12_381.G1.ProjectivePoint.fromAffine(bls12_381_1.bls12_381.G1.mapToCurve([number]).toAffine()).toRawBytes();
 }
 function hash_to_fe(...args) {
-    const hasher = sha3_1.keccak_256.create();
+    const hasher = sha256_1.sha256.create();
     for (let arg of args) {
         hasher.update(arg);
     }
@@ -128,7 +130,7 @@ function NIZK_DLOG_generate_proof(a) {
     const g_hashable = to_pxpy(bls12_381_1.bls12_381.G1.ProjectivePoint.BASE.toRawBytes());
     // Compute the challenge c
     const concatenated = utils.concatBytes(g_hashable, x_hashable, v_hashable);
-    const challenge = utils.numberToBytesBE(utils.bytesToNumberBE(sha3_1.keccak_256.create().update(concatenated).digest()) % 52435875175126190479447740508185965837690552500527637822603658699938581184513n, 32);
+    const challenge = utils.numberToBytesBE(utils.bytesToNumberBE(sha256_1.sha256.create().update(concatenated).digest()) % 52435875175126190479447740508185965837690552500527637822603658699938581184513n, 32);
     // The challenge can be between 0 and 2^256 - 1, but the scalar is between 1 and the curve order (approx 2^254.857089413)
     // TODO: Check if this biasing is acceptable, since everything over 52435875175126190479447740508185965837690552500527637822603658699938581184513
     // will loop over and we will get a bias towards lower numbers
@@ -143,7 +145,7 @@ function NIZK_DLOG_generate_proof(a) {
 function NIZK_DLOG_verify_proof(g_bytes, x_bytes, v_bytes, z) {
     // Compute the challenge c
     const concatenated = utils.concatBytes(g_bytes, x_bytes, v_bytes);
-    const challenge = utils.numberToBytesBE(utils.bytesToNumberBE(sha3_1.keccak_256.create().update(concatenated).digest()) % 52435875175126190479447740508185965837690552500527637822603658699938581184513n, 32);
+    const challenge = utils.numberToBytesBE(utils.bytesToNumberBE(sha256_1.sha256.create().update(concatenated).digest()) % 52435875175126190479447740508185965837690552500527637822603658699938581184513n, 32);
     // The challenge can be between 0 and 2^256-1, but the scalar is between 0 and the curve order (approx 2^254.857089413)
     // TODO: Check if this biasing is acceptable, since everything over 52435875175126190479447740508185965837690552500527637822603658699938581184513
     // will loop over and we will get a bias towards lower numbers
