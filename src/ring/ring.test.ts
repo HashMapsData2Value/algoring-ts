@@ -69,8 +69,6 @@ describe('Ring Signature', () => {
 
     const new_point = hash_point_to_ge(point)
 
-    console.log('new_point', new_point);
-
     expect(new_point).toStrictEqual(new Uint8Array([
       143, 205, 156, 80, 48, 87, 140, 252, 22,
       156, 250, 71, 228, 133, 49, 209, 171, 69,
