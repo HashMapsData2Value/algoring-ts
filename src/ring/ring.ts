@@ -1,9 +1,10 @@
 import { bls12_381 } from '@noble/curves/bls12-381';
-import { keccak_256 } from '@noble/hashes/sha3';
+import { sha256 } from '@noble/hashes/sha256';
+import { expand_message_xmd } from '@noble/curves/abstract/hash-to-curve';
 import * as utils from '@noble/curves/abstract/utils';
-import { error } from 'console';
 
 const CURVE_ORDER = 52435875175126190479447740508185965837690552500527637822603658699938581184513n
+// The BLS12-381 curve order is approximately 2^254.857089413, which is less than 2^256
 
 // The AVM represents points as their X and Y points concatenated
 export function to_pxpy(input: Uint8Array): Uint8Array {
@@ -17,16 +18,17 @@ export function from_pxpy(input: Uint8Array): Uint8Array {
   return bls12_381.G1.ProjectivePoint.fromAffine({ x, y }).toRawBytes()
 }
 
-//TODO: Need to look into implementing ExpandMsgXmd in AVM; and then call HashToCurve directly from Nobles
 export function hash_point_to_ge(input: Uint8Array): Uint8Array {
   const pxpy = to_pxpy(input)
-  const hash = keccak_256.create().update(pxpy).digest();
-  const number = utils.hexToNumber(utils.bytesToHex(hash)) % bls12_381.G1.CURVE.Fp.ORDER;
+  const DST = utils.utf8ToBytes('BLS12381G1_XMD:SHA-256_SSWU_RO_');
+
+  const uniformBytes = expand_message_xmd(pxpy, DST, 48, sha256);
+  const number = utils.hexToNumber(utils.bytesToHex(uniformBytes)) % bls12_381.G1.CURVE.Fp.ORDER;
   return bls12_381.G1.ProjectivePoint.fromAffine(bls12_381.G1.mapToCurve([number]).toAffine()).toRawBytes();
 }
 
 export function hash_to_fe(...args: Uint8Array[]): Uint8Array {
-  const hasher = keccak_256.create();
+  const hasher = sha256.create();
   for (let arg of args) {
     hasher.update(arg);
   }
@@ -91,7 +93,7 @@ export function NIZK_DLOG_generate_proof(a: Uint8Array): [Uint8Array, Uint8Array
 
   // Compute the challenge c
   const concatenated = utils.concatBytes(g_hashable, x_hashable, v_hashable);
-  const challenge = utils.numberToBytesBE(utils.bytesToNumberBE(keccak_256.create().update(concatenated).digest()) % 52435875175126190479447740508185965837690552500527637822603658699938581184513n, 32);
+  const challenge = utils.numberToBytesBE(utils.bytesToNumberBE(sha256.create().update(concatenated).digest()) % 52435875175126190479447740508185965837690552500527637822603658699938581184513n, 32);
 
   // The challenge can be between 0 and 2^256 - 1, but the scalar is between 1 and the curve order (approx 2^254.857089413)
   // TODO: Check if this biasing is acceptable, since everything over 52435875175126190479447740508185965837690552500527637822603658699938581184513
@@ -110,7 +112,7 @@ export function NIZK_DLOG_generate_proof(a: Uint8Array): [Uint8Array, Uint8Array
 export function NIZK_DLOG_verify_proof(g_bytes: Uint8Array, x_bytes: Uint8Array, v_bytes: Uint8Array, z: Uint8Array): boolean {
   // Compute the challenge c
   const concatenated = utils.concatBytes(g_bytes, x_bytes, v_bytes);
-  const challenge = utils.numberToBytesBE(utils.bytesToNumberBE(keccak_256.create().update(concatenated).digest()) % 52435875175126190479447740508185965837690552500527637822603658699938581184513n, 32);
+  const challenge = utils.numberToBytesBE(utils.bytesToNumberBE(sha256.create().update(concatenated).digest()) % 52435875175126190479447740508185965837690552500527637822603658699938581184513n, 32);
 
   // The challenge can be between 0 and 2^256-1, but the scalar is between 0 and the curve order (approx 2^254.857089413)
   // TODO: Check if this biasing is acceptable, since everything over 52435875175126190479447740508185965837690552500527637822603658699938581184513
